@@ -1,9 +1,17 @@
 import requests
 
+BASE_URL = "https://api.frankfurter.dev/v2"
 
-url = "https://api.frankfurter.dev/v2/rate/usd/vnd"
 
-response = requests.get(url)
+def get_rate(from_currency, to_currency):
+    url = f"{BASE_URL}/rate/{from_currency}/{to_currency}"
 
-print(response.status_code)
-print(response.json())
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+
+    return response.json()
+
+
+if __name__ == "__main__":
+    data = get_rate("USD", "VND")
+    print(data)

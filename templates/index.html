@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Currency Exchange</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <h1>Currency Exchange Web App</h1>
+
+    <p>Hệ thống tra cứu và quy đổi tỷ giá ngoại tệ</p>
+
+    {% if error %}
+
+        <p>{{ error }}</p>
+
+    {% else %}
+
+        <h2>Tỷ giá USD → VND</h2>
+
+        <p>
+            1 USD = {{ rate }} VND
+        </p>
+
+        <p>
+            Ngày cập nhật: {{ date }}
+        </p>
+
+    {% endif %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

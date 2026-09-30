@@ -1,11 +1,9 @@
 from flask import Flask
+from routes.currency_routes import currency_bp
 
 app = Flask(__name__)
 
- 
-@app.route("/")
-def home():
-    return "Currency Exchange Web App"
+app.register_blueprint(currency_bp)
 
 
 if __name__ == "__main__":

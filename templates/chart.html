@@ -1,0 +1,23 @@
+def seed_rate_history():
+    """Tạo dữ liệu tỷ giá 7 ngày gần nhất để biểu đồ có dữ liệu hiển thị ngay"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Kiểm tra xem bảng đã có dữ liệu chưa
+    cursor.execute("SELECT COUNT(*) FROM exchange_rate_history")
+    if cursor.fetchone()[0] == 0:
+        sample_rates = [
+            ("USD/VND", 25820.0, "2026-09-24"),
+            ("USD/VND", 25850.0, "2026-09-25"),
+            ("USD/VND", 25870.0, "2026-09-26"),
+            ("USD/VND", 25890.0, "2026-09-27"),
+            ("USD/VND", 25900.0, "2026-09-28"),
+            ("USD/VND", 25905.0, "2026-09-29"),
+            ("USD/VND", 25913.0, "2026-09-30"),  # Dữ liệu hôm nay
+        ]
+        cursor.executemany(
+            "INSERT INTO exchange_rate_history (pair, rate, date) VALUES (?, ?, ?)",
+            sample_rates
+        )
+        conn.commit()
+    conn.close()

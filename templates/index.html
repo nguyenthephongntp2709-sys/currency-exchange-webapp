@@ -6,33 +6,81 @@
 
     <title>Currency Exchange</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
 
-    <h1>Currency Exchange Web App</h1>
+    <div class="container">
 
-    <p>Hệ thống tra cứu và quy đổi tỷ giá ngoại tệ</p>
+        <h1>Currency Exchange</h1>
 
-    {% if error %}
-
-        <p>{{ error }}</p>
-
-    {% else %}
-
-        <h2>Tỷ giá USD → VND</h2>
-
-        <p>
-            1 USD = {{ rate }} VND
+        <p class="subtitle">
+            Tra cứu và chuyển đổi tỷ giá tiền tệ
         </p>
 
-        <p>
-            Ngày cập nhật: {{ date }}
-        </p>
+        <div class="exchange-box">
 
-    {% endif %}
+            <h2>Chuyển đổi tiền tệ</h2>
+
+            <div class="form-group">
+                <label for="amount">Số tiền</label>
+                <input
+                    type="number"
+                    id="amount"
+                    placeholder="Nhập số tiền"
+                    min="0"
+                >
+            </div>
+
+            <div class="currency-row">
+
+                <div class="form-group">
+                    <label for="from_currency">Từ</label>
+
+                    <select id="from_currency">
+                        <option value="USD">USD - Đô la Mỹ</option>
+                        <option value="VND">VND - Việt Nam Đồng</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="JPY">JPY - Yên Nhật</option>
+                        <option value="GBP">GBP - Bảng Anh</option>
+                    </select>
+                </div>
+
+                <button id="swap-btn" type="button">
+                    ⇄
+                </button>
+
+                <div class="form-group">
+                    <label for="to_currency">Sang</label>
+
+                    <select id="to_currency">
+                        <option value="VND">VND - Việt Nam Đồng</option>
+                        <option value="USD">USD - Đô la Mỹ</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="JPY">JPY - Yên Nhật</option>
+                        <option value="GBP">GBP - Bảng Anh</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <button id="convert-btn" class="convert-btn">
+                Chuyển đổi
+            </button>
+
+            <div
+    id="result"
+    class="result"
+    data-rate="{{ rate }}"
+    data-date="{{ date }}"
+>
+    <p>Kết quả sẽ hiển thị ở đây</p>
+</div>
+
+        </div>
+
+    </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 

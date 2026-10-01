@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request
+from services.vietcombank_service import convert_vcb, get_vcb_rates
+from database.database import save_conversion
 from services.exchange_api import get_rate, get_currencies, convert_currency
-from services.vietcombank_service import convert_vcb
 import requests
 
 currency_bp = Blueprint("currency", __name__)
@@ -8,11 +9,18 @@ currency_bp = Blueprint("currency", __name__)
 
 @currency_bp.route("/", methods=["GET", "POST"])
 def index():
+    vcb_currencies = []
     result = None
     error = None
     rate = None
     date = None
     currencies = []
+
+    selected_amount = ""
+    selected_from = "USD"
+    selected_to = "VND"
+    selected_source = "frankfurter"
+    selected_rate_type = "transfer"
 
     # Lấy danh sách tiền tệ
     try:
@@ -33,36 +41,43 @@ def index():
     # Khi người dùng nhấn nút Quy đổi
     if request.method == "POST":
         try:
-            amount = float(request.form["amount"])
-            from_currency = request.form["from_currency"]
-            to_currency = request.form["to_currency"]
+            selected_amount = request.form["amount"]
+            selected_from = request.form["from_currency"]
+            selected_to = request.form["to_currency"]
+            selected_source = request.form.get("source", "frankfurter")
+            selected_rate_type = request.form.get("rate_type", "transfer")
 
-            source = request.form.get("source", "frankfurter")
+            amount = float(selected_amount)
+            from_currency = selected_from
+            to_currency = selected_to
+            source = selected_source
 
             if amount <= 0:
                 raise ValueError("Số tiền phải lớn hơn 0.")
 
             if source == "vietcombank":
 
-                rate_type = request.form.get(
-                    "rate_type",
-                    "transfer"
-                )
-
                 result = convert_vcb(
                     amount,
                     from_currency,
                     to_currency,
-                    rate_type
+                    selected_rate_type
                 )
 
             else:
-
                 result = convert_currency(
                     amount,
                     from_currency,
                     to_currency
                 )
+
+            save_conversion(
+                result["from_currency"],
+                result["to_currency"],
+                result["amount"],
+                result["result"],
+                result["rate"]
+            )    
 
         except ValueError as e:
             error = str(e)
@@ -76,5 +91,11 @@ def index():
         date=date,
         currencies=currencies,
         result=result,
-        error=error
+        error=error,
+
+        selected_amount=selected_amount,
+        selected_from=selected_from,
+        selected_to=selected_to,
+        selected_source=selected_source,
+        selected_rate_type=selected_rate_type
     )

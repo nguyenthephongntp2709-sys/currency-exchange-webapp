@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch Sử Quy Đổi Tỷ Giá</title>
+    <!-- Nhúng thư viện Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f8f9fa; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h2 { color: #333; margin-top: 30px; }
+        .chart-box { margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .btn-back { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="btn-back">← Quay lại trang chủ quy đổi</a>
+
+        <h2>Biểu Đồ Xu Hướng Tỷ Giá Gần Đây (USD/VND)</h2>
+        <div class="chart-box">
+            <canvas id="rateChart"></canvas>
+        </div>
+
+        <h2>Lịch Sử Quy Đổi</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Quy đổi</th>
+                    <th>Tỷ giá áp dụng</th>
+                    <th>Kết quả</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in conversions %}
+                <tr>
+                    <td>{{ item.timestamp }}</td>
+                    <td>{{ item.amount }} {{ item.from_currency }}</td>
+                    <td>{{ item.rate }}</td>
+                    <td><strong>{{ item.result }} {{ item.to_currency }}</strong></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; color: #777;">Chưa có lịch sử quy đổi nào. Hãy thực hiện quy đổi ở trang chủ trước!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Vẽ biểu đồ mẫu bằng Chart.js
+        const ctx = document.getElementById('rateChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['7 ngày trước', '6 ngày trước', '5 ngày trước', '4 ngày trước', '3 ngày trước', 'Hôm qua', 'Hôm nay'],
+                datasets: [{
+                    label: 'Tỷ giá USD/VND',
+                    data: [25350, 25380, 25400, 25390, 25410, 25430, 25450],
+                    borderColor: '#007bff',
+                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

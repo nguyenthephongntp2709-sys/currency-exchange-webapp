@@ -15,6 +15,12 @@
         th { background-color: #007bff; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
         .btn-back { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+        
+        /* CSS cho nút bấm mốc thời gian */
+        .chart-controls { text-align: center; margin-bottom: 15px; }
+        .btn-period { padding: 8px 16px; margin: 0 5px; border: 1px solid #007bff; background: white; color: #007bff; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-period:hover { background: #e9f5ff; }
+        .btn-period.active { background: #007bff; color: white; }
     </style>
 </head>
 <body>
@@ -23,6 +29,13 @@
 
         <h2>Biểu Đồ Xu Hướng Tỷ Giá Gần Đây (USD/VND)</h2>
         <div class="chart-box">
+            <!-- Nút bấm điều khiển thời gian -->
+            <div class="chart-controls">
+                <button type="button" class="btn-period active" onclick="loadChartData('7d', this)">7 ngày</button>
+                <button type="button" class="btn-period" onclick="loadChartData('1m', this)">1 tháng</button>
+                <button type="button" class="btn-period" onclick="loadChartData('1y', this)">1 năm</button>
+            </div>
+            
             <canvas id="rateChart"></canvas>
         </div>
 
@@ -53,28 +66,89 @@
         </table>
     </div>
 
+    <!-- CODE JAVASCRIPT GỌI API ĐỘNG -->
     <script>
-        // Vẽ biểu đồ mẫu bằng Chart.js
-        const ctx = document.getElementById('rateChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['7 ngày trước', '6 ngày trước', '5 ngày trước', '4 ngày trước', '3 ngày trước', 'Hôm qua', 'Hôm nay'],
-                datasets: [{
-                    label: 'Tỷ giá USD/VND',
-                    data: [25350, 25380, 25400, 25390, 25410, 25430, 25450],
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: false }
-                }
+        let rateChart = null;
+
+        function loadChartData(period, btnElement = null) {
+            if (btnElement) {
+                document.querySelectorAll('.btn-period').forEach(btn => btn.classList.remove('active'));
+                btnElement.classList.add('active');
             }
+
+            // Gọi API
+            fetch(`/api/rate-history/USD/VND?period=${period}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Lỗi Server Flask");
+                    return response.json();
+                })
+                .then(data => {
+                    const ctx = document.getElementById('rateChart').getContext('2d');
+                    // Kiểm tra xem có phải là đang xem mốc 1 năm không
+                    const isOneYear = period === '1y';
+                    
+                    if (!rateChart) {
+                        rateChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    label: 'Tỷ giá USD/VND',
+                                    data: data.rates,
+                                    borderColor: '#007bff',
+                                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                    fill: true,
+                                    tension: 0.3,
+                                    pointRadius: isOneYear ? 0 : 3,
+                                    pointHoverRadius: 6, 
+                                    borderWidth: isOneYear ? 1.5 : 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                interaction: {
+                                    mode: 'index',
+                                    intersect: false,
+                                },
+                                scales: {
+                                    x: {
+                                        ticks: {
+                                            display: false 
+                                        },
+                                        grid: {
+                                            display: false
+                                        }
+                                    },
+                                    y: { 
+                                        beginAtZero: false,
+                                        ticks: {
+                                            callback: function(value) {
+                                                return value.toLocaleString('vi-VN');
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        rateChart.data.labels = data.labels;
+                        rateChart.data.datasets[0].data = data.rates;
+                        
+                        rateChart.data.datasets[0].pointRadius = isOneYear ? 0 : 3;
+                        rateChart.data.datasets[0].borderWidth = isOneYear ? 1.5 : 2;
+                        
+                        rateChart.update();
+                    }
+                })
+                .catch(error => {
+                    console.error("Lỗi khi tải dữ liệu biểu đồ:", error);
+                    alert("Chưa lấy được dữ liệu. Hãy kiểm tra lại Server!");
+                });
+        }
+
+        // Gọi ngay khi load trang
+        document.addEventListener('DOMContentLoaded', () => {
+            loadChartData('7d');
         });
     </script>
 </body>

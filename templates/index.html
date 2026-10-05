@@ -21,6 +21,11 @@
         Tra cứu và chuyển đổi tỷ giá tiền tệ
     </p>
 
+    <!-- NÚT LỊCH SỬ -->
+    <a href="/history" class="history-btn">
+        LỊCH SỬ
+    </a>
+
     <div class="exchange-box">
 
         <h2>Chuyển đổi tiền tệ</h2>
@@ -67,12 +72,13 @@
 
                             <option
                                 value="{{ currency.iso_code }}"
-
                                 {% if currency.iso_code == selected_from %}
                                     selected
                                 {% endif %}
                             >
+
                                 {{ currency.iso_code }} - {{ currency.name }}
+
                             </option>
 
                         {% endfor %}
@@ -107,12 +113,13 @@
 
                             <option
                                 value="{{ currency.iso_code }}"
-
                                 {% if currency.iso_code == selected_to %}
                                     selected
                                 {% endif %}
                             >
+
                                 {{ currency.iso_code }} - {{ currency.name }}
+
                             </option>
 
                         {% endfor %}
@@ -174,6 +181,7 @@
                     name="rate_type"
                     data-selected="{{ selected_rate_type }}"
                 >
+
                     <!--
                         JavaScript sẽ tự tạo:
 
@@ -184,6 +192,7 @@
                         VND -> Ngoại tệ:
                             Bán (Sell)
                     -->
+
                 </select>
 
             </div>
@@ -210,6 +219,7 @@
             {% if result %}
 
                 <p>
+
                     {{ result.amount }}
                     {{ result.from_currency }}
 
@@ -219,26 +229,32 @@
                         {{ "{:,.2f}".format(result.result) }}
                         {{ result.to_currency }}
                     </strong>
+
                 </p>
 
 
                 <p>
+
                     Tỷ giá:
                     {{ "{:,.6f}".format(result.rate) }}
+
                 </p>
 
 
                 {% if result.date %}
 
                     <p>
+
                         Ngày cập nhật:
                         {{ result.date }}
+
                     </p>
 
                 {% endif %}
 
 
                 <p>
+
                     Nguồn:
 
                     {% if result.source == "vietcombank" %}
@@ -250,6 +266,7 @@
                         Frankfurter
 
                     {% endif %}
+
                 </p>
 
 

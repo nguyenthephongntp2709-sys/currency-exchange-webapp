@@ -3,187 +3,167 @@ const toCurrency = document.getElementById("to_currency");
 const sourceSelect = document.getElementById("source");
 const rateTypeGroup = document.getElementById("rate-type-group");
 const rateTypeSelect = document.getElementById("rate_type");
+const convertButton = document.getElementById("convert-btn");
 const swapButton = document.getElementById("swap-btn");
+const currencyNotice = document.getElementById("currency-notice");
 
-// Giữ loại mua đã chọn sau khi submit.
-// Khi đổi chiều sang Sell rồi quay lại, vẫn nhớ loại mua này.
+const currencyData = JSON.parse(
+    document.getElementById("currency-data").textContent
+);
+
 let selectedBuyType =
-    rateTypeSelect.dataset.selected === "cash"
-        ? "cash"
-        : "transfer";
-
-// Nếu HTML có truyền danh sách ngoại tệ VCB thì dùng để lọc.
-// Nếu chưa có, vẫn cho giao diện hoạt động;
-// backend sẽ kiểm tra ngoại tệ có được hỗ trợ hay không.
-const vcbCurrencies = Array.isArray(window.vcbCurrencies)
-    ? new Set(window.vcbCurrencies)
-    : null;
+    rateTypeSelect.dataset.selected === "cash" ? "cash" : "transfer";
 
 
-// ==========================================
-// LỌC CÁC LỰA CHỌN TIỀN TỆ
-// ==========================================
+// Tạo lại dropdown chỉ với các đồng tiền hợp lệ.
+// Giữ lựa chọn hiện tại nếu vẫn được hỗ trợ.
+function fillCurrencies(select, currencies, preferredValue) {
+    select.replaceChildren();
 
-function setCurrencyOptions(select, isAllowed) {
-    for (const option of select.options) {
-        const allowed = isAllowed(option.value);
-
-        option.hidden = !allowed;
-        option.disabled = !allowed;
+    for (const currency of currencies) {
+        select.add(new Option(
+            currency.iso_code + " - " + currency.name,
+            currency.iso_code
+        ));
     }
 
-    // Nếu lựa chọn hiện tại không còn phù hợp,
-    // chuyển sang lựa chọn hợp lệ đầu tiên.
-    const currentOption = select.selectedOptions[0];
-
-    if (!currentOption || currentOption.disabled) {
-        const firstAllowed = Array.from(select.options).find(
-            option => !option.disabled
-        );
-
-        select.value = firstAllowed ? firstAllowed.value : "";
-    }
-}
-
-function isVcbForeignCurrency(code) {
-    return (
-        code !== "VND" &&
-        (!vcbCurrencies || vcbCurrencies.has(code))
-    );
-}
-
-function updateCurrencyOptions() {
-    // Frankfurter: sử dụng toàn bộ danh sách tiền tệ.
-    if (sourceSelect.value !== "vietcombank") {
-        setCurrencyOptions(fromCurrency, () => true);
-        setCurrencyOptions(toCurrency, () => true);
-        return;
-    }
-
-    // Vietcombank: tiền nguồn là VND hoặc ngoại tệ.
-    setCurrencyOptions(
-        fromCurrency,
-        code => code === "VND" || isVcbForeignCurrency(code)
-    );
-
-    if (fromCurrency.value === "VND") {
-        // VND -> ngoại tệ
-        setCurrencyOptions(toCurrency, isVcbForeignCurrency);
+    if (currencies.some(item => item.iso_code === preferredValue)) {
+        select.value = preferredValue;
     } else {
-        // Ngoại tệ -> VND
-        setCurrencyOptions(
-            toCurrency,
-            code => code === "VND"
-        );
+        select.value = currencies.length ? currencies[0].iso_code : "";
     }
+
+    select.disabled = currencies.length === 0;
 }
 
 
-// ==========================================
-// HIỂN THỊ LOẠI GIAO DỊCH VIETCOMBANK
-// ==========================================
+function updateForm(
+    preferredFrom = fromCurrency.value,
+    preferredTo = toCurrency.value
+) {
+    const isVcb = sourceSelect.value === "vietcombank";
 
-function updateRateType() {
-    const isVietcombank =
-        sourceSelect.value === "vietcombank";
-
-    // Frankfurter: ẩn và không gửi rate_type trong form.
-    rateTypeGroup.style.display =
-        isVietcombank ? "flex" : "none";
-
-    rateTypeSelect.disabled = !isVietcombank;
-
-    if (!isVietcombank) {
-        return;
-    }
-
-    const from = fromCurrency.value;
-    const to = toCurrency.value;
-
-    // Xóa các option cũ trước khi tạo lại.
+    rateTypeGroup.style.display = isVcb ? "flex" : "none";
+    rateTypeSelect.disabled = !isVcb;
     rateTypeSelect.replaceChildren();
 
-    if (from === "VND" && to !== "VND" && to !== "") {
-        // Ngân hàng bán ngoại tệ cho khách.
-        rateTypeSelect.add(
-            new Option("Bán (Sell)", "sell")
+    if (!isVcb) {
+        // Frankfurter dùng danh sách riêng của Frankfurter.
+        fillCurrencies(
+            fromCurrency,
+            currencyData.frankfurter,
+            preferredFrom
         );
 
-        rateTypeSelect.value = "sell";
-        return;
+        fillCurrencies(
+            toCurrency,
+            currencyData.frankfurter,
+            preferredTo
+        );
+
+        currencyNotice.textContent = currencyData.frankfurter.length
+            ? ""
+            : "Không tải được danh sách tiền tệ Frankfurter.";
+    } else {
+        const foreignCurrencies = currencyData.vietcombank;
+
+        // cash: phải có giá mua tiền mặt.
+        // transfer: phải có giá mua chuyển khoản.
+        const buyCurrencies = foreignCurrencies.filter(
+            item => item[selectedBuyType]
+        );
+
+        // Chiều VND -> ngoại tệ phải có giá bán.
+        const sellCurrencies = foreignCurrencies.filter(
+            item => item.sell
+        );
+
+        const vnd = {
+            iso_code: "VND",
+            name: "Vietnamese Dong"
+        };
+
+        const fromOptions = [...buyCurrencies];
+
+        // Chỉ cho chọn VND làm tiền nguồn
+        // khi có ít nhất một ngoại tệ có giá bán.
+        if (sellCurrencies.length) {
+            fromOptions.push(vnd);
+        }
+
+        fillCurrencies(
+            fromCurrency,
+            fromOptions,
+            preferredFrom
+        );
+
+        if (fromCurrency.value === "VND") {
+            // VND -> ngoại tệ: chỉ hiện tiền có giá bán.
+            fillCurrencies(
+                toCurrency,
+                sellCurrencies,
+                preferredTo
+            );
+
+            rateTypeSelect.add(
+                new Option("Bán (Sell)", "sell")
+            );
+
+            rateTypeSelect.value = "sell";
+        } else {
+            // Ngoại tệ -> VND.
+            fillCurrencies(
+                toCurrency,
+                buyCurrencies.length ? [vnd] : [],
+                "VND"
+            );
+
+            rateTypeSelect.add(
+                new Option("Mua chuyển khoản", "transfer")
+            );
+
+            rateTypeSelect.add(
+                new Option("Mua tiền mặt", "cash")
+            );
+
+            rateTypeSelect.value = selectedBuyType;
+        }
+
+        currencyNotice.textContent = foreignCurrencies.length
+            ? "Chỉ hiển thị ngoại tệ có tỷ giá cho loại giao dịch đang chọn."
+            : "Không tải được tỷ giá Vietcombank. Bạn hãy tải lại trang hoặc chọn Frankfurter.";
     }
 
-    if (from !== "VND" && from !== "" && to === "VND") {
-        // Ngân hàng mua ngoại tệ của khách.
-        rateTypeSelect.add(
-            new Option("Mua chuyển khoản", "transfer")
-        );
-
-        rateTypeSelect.add(
-            new Option("Mua tiền mặt", "cash")
-        );
-
-        // Giữ lại loại mua đã chọn.
-        rateTypeSelect.value = selectedBuyType;
-        return;
-    }
-
-    rateTypeSelect.add(
-        new Option("Không áp dụng", "")
+    const canConvert = Boolean(
+        fromCurrency.value && toCurrency.value
     );
 
-    rateTypeSelect.disabled = true;
-}
-
-function updateForm() {
-    updateCurrencyOptions();
-    updateRateType();
+    convertButton.disabled = !canConvert;
+    swapButton.disabled = !canConvert;
 }
 
 
-// ==========================================
-// GHI NHỚ LỰA CHỌN MUA CỦA NGƯỜI DÙNG
-// ==========================================
-
+// Đổi loại mua -> lọc lại ngay danh sách ngoại tệ.
 rateTypeSelect.addEventListener("change", function () {
-    if (
-        rateTypeSelect.value === "transfer" ||
-        rateTypeSelect.value === "cash"
-    ) {
-        selectedBuyType = rateTypeSelect.value;
+    if (this.value === "cash" || this.value === "transfer") {
+        selectedBuyType = this.value;
     }
-});
-
-
-// ==========================================
-// NÚT ĐỔI CHIỀU TIỀN TỆ
-// ==========================================
-
-swapButton.addEventListener("click", function () {
-    const oldFrom = fromCurrency.value;
-    const oldTo = toCurrency.value;
-
-    // Mở lại các option trước khi đổi chiều,
-    // vì một số option đang bị lọc bởi Vietcombank.
-    setCurrencyOptions(fromCurrency, () => true);
-    setCurrencyOptions(toCurrency, () => true);
-
-    fromCurrency.value = oldTo;
-    toCurrency.value = oldFrom;
 
     updateForm();
 });
 
 
-// ==========================================
-// CẬP NHẬT KHI ĐỔI NGUỒN HOẶC TIỀN TỆ
-// ==========================================
-
-sourceSelect.addEventListener("change", updateForm);
-fromCurrency.addEventListener("change", updateForm);
-toCurrency.addEventListener("change", updateForm);
+// Đổi nguồn hoặc tiền tệ -> cập nhật danh sách và loại giao dịch.
+sourceSelect.addEventListener("change", () => updateForm());
+fromCurrency.addEventListener("change", () => updateForm());
+toCurrency.addEventListener("change", () => updateForm());
 
 
-// Khôi phục giao diện khi trang tải lần đầu
-// hoặc tải lại sau khi bấm Chuyển đổi.
+// Đổi chiều và giữ cặp tiền nếu chiều mới có tỷ giá phù hợp.
+swapButton.addEventListener("click", function () {
+    updateForm(toCurrency.value, fromCurrency.value);
+});
+
+
+// Khôi phục form khi mở trang hoặc sau khi chuyển đổi.
 updateForm();

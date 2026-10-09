@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>Currency Exchange</title>
 
@@ -12,32 +12,23 @@
 </head>
 
 <body>
-
 <div class="container">
-
     <h1>Currency Exchange</h1>
 
     <p class="subtitle">
         Tra cứu và chuyển đổi tỷ giá tiền tệ
     </p>
 
-    <!-- NÚT LỊCH SỬ -->
     <a href="/history" class="history-btn">
         LỊCH SỬ
     </a>
 
     <div class="exchange-box">
-
         <h2>Chuyển đổi tiền tệ</h2>
 
         <form method="POST">
-
-            <!-- SỐ TIỀN -->
             <div class="form-group">
-
-                <label for="amount">
-                    Số tiền
-                </label>
+                <label for="amount">Số tiền</label>
 
                 <input
                     type="number"
@@ -49,100 +40,50 @@
                     step="any"
                     required
                 >
-
             </div>
 
-
-            <!-- CHỌN TIỀN TỆ -->
             <div class="currency-row">
-
-                <!-- TỪ -->
                 <div class="form-group">
-
-                    <label for="from_currency">
-                        Từ
-                    </label>
+                    <label for="from_currency">Từ</label>
 
                     <select
                         id="from_currency"
                         name="from_currency"
+                        required
                     >
-
-                        {% for currency in currencies %}
-
-                            <option
-                                value="{{ currency.iso_code }}"
-                                {% if currency.iso_code == selected_from %}
-                                    selected
-                                {% endif %}
-                            >
-
-                                {{ currency.iso_code }} - {{ currency.name }}
-
-                            </option>
-
-                        {% endfor %}
-
+                        <option value="{{ selected_from }}" selected>
+                            {{ selected_from }}
+                        </option>
                     </select>
-
                 </div>
 
-
-                <!-- NÚT ĐỔI CHIỀU -->
                 <button
                     id="swap-btn"
                     type="button"
+                    aria-label="Đổi chiều tiền tệ"
                 >
                     ⇄
                 </button>
 
-
-                <!-- SANG -->
                 <div class="form-group">
-
-                    <label for="to_currency">
-                        Sang
-                    </label>
+                    <label for="to_currency">Sang</label>
 
                     <select
                         id="to_currency"
                         name="to_currency"
+                        required
                     >
-
-                        {% for currency in currencies %}
-
-                            <option
-                                value="{{ currency.iso_code }}"
-                                {% if currency.iso_code == selected_to %}
-                                    selected
-                                {% endif %}
-                            >
-
-                                {{ currency.iso_code }} - {{ currency.name }}
-
-                            </option>
-
-                        {% endfor %}
-
+                        <option value="{{ selected_to }}" selected>
+                            {{ selected_to }}
+                        </option>
                     </select>
-
                 </div>
-
             </div>
 
+            <div class="form-group" style="margin-top: 22px;">
+                <label for="source">Nguồn tỷ giá</label>
 
-            <!-- NGUỒN TỶ GIÁ -->
-            <div class="form-group">
-
-                <label for="source">
-                    Nguồn tỷ giá
-                </label>
-
-                <select
-                    id="source"
-                    name="source"
-                >
-
+                <select id="source" name="source">
                     <option
                         value="frankfurter"
                         {% if selected_source == "frankfurter" %}
@@ -160,18 +101,14 @@
                     >
                         Vietcombank
                     </option>
-
                 </select>
-
             </div>
 
-
-            <!-- LOẠI GIAO DỊCH VIETCOMBANK -->
             <div
                 class="form-group"
                 id="rate-type-group"
+                style="margin-top: 22px;"
             >
-
                 <label for="rate_type">
                     Loại giao dịch Vietcombank
                 </label>
@@ -181,24 +118,17 @@
                     name="rate_type"
                     data-selected="{{ selected_rate_type }}"
                 >
-
-                    <!--
-                        JavaScript sẽ tự tạo:
-
-                        Ngoại tệ -> VND:
-                            Mua chuyển khoản
-                            Mua tiền mặt
-
-                        VND -> Ngoại tệ:
-                            Bán (Sell)
-                    -->
-
+                    <!-- main.js sẽ tạo lựa chọn phù hợp. -->
                 </select>
-
             </div>
 
+            <p
+                id="currency-notice"
+                role="status"
+                aria-live="polite"
+                style="margin-top: 12px; color: #64748b; font-size: 14px;"
+            ></p>
 
-            <!-- NÚT CHUYỂN ĐỔI -->
             <button
                 id="convert-btn"
                 class="convert-btn"
@@ -206,94 +136,68 @@
             >
                 Chuyển đổi
             </button>
-
         </form>
 
-
-        <!-- KẾT QUẢ -->
-        <div
-            id="result"
-            class="result"
-        >
-
+        <div id="result" class="result">
             {% if result %}
-
                 <p>
-
-                    {{ result.amount }}
-                    {{ result.from_currency }}
-
+                    {{ result.amount }} {{ result.from_currency }}
                     =
-
                     <strong>
                         {{ "{:,.2f}".format(result.result) }}
                         {{ result.to_currency }}
                     </strong>
-
                 </p>
 
-
                 <p>
-
                     Tỷ giá:
                     {{ "{:,.6f}".format(result.rate) }}
-
                 </p>
-
 
                 {% if result.date %}
-
-                    <p>
-
-                        Ngày cập nhật:
-                        {{ result.date }}
-
-                    </p>
-
+                    <p>Ngày cập nhật: {{ result.date }}</p>
                 {% endif %}
 
-
                 <p>
-
                     Nguồn:
-
                     {% if result.source == "vietcombank" %}
-
                         Vietcombank
-
                     {% else %}
-
                         Frankfurter
-
                     {% endif %}
-
                 </p>
 
-
-            {% elif error %}
-
-                <p>
-                    {{ error }}
-                </p>
-
-
-            {% else %}
-
-                <p>
-                    Kết quả sẽ hiển thị ở đây
-                </p>
-
+                {% if result.source == "vietcombank" %}
+                    <p>
+                        Loại giao dịch:
+                        {% if result.rate_type == "cash" %}
+                            Mua tiền mặt
+                        {% elif result.rate_type == "sell" %}
+                            Bán (Sell)
+                        {% else %}
+                            Mua chuyển khoản
+                        {% endif %}
+                    </p>
+                {% endif %}
+            {% elif not error %}
+                <p>Kết quả sẽ hiển thị ở đây</p>
             {% endif %}
 
+            {% if error %}
+                <p role="alert">{{ error }}</p>
+            {% endif %}
         </div>
-
     </div>
-
 </div>
 
+<!-- Truyền danh sách riêng của từng nguồn cho JavaScript. -->
+<script id="currency-data" type="application/json">
+    {{ {
+        "frankfurter": currencies,
+        "vietcombank": vcb_currencies
+    } | tojson }}
+</script>
 
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
 </body>
-
 </html>
